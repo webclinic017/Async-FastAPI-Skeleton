@@ -4,6 +4,7 @@ from .database import Base
 
 
 class Benefactor(Base):
+    """Alumni table"""
     __tablename__ = "alumni"
     id = Column(Integer, primary_key=True, index=True)
     first_name = Column(String)

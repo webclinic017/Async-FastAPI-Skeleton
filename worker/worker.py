@@ -1,7 +1,8 @@
-import smtplib
 import os
+import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+
 from arq.connections import RedisSettings
 
 REDIS_HOST = os.environ.get("REDIS_HOST", None)
@@ -13,11 +14,17 @@ FROM_EMAIL = os.environ.get("FROM_EMAIL", None)
 
 REDIS_SETTINGS = RedisSettings(host=REDIS_HOST, port=REDIS_PORT)
 
-#hardcoded subscribers
 SUBSCRIBERS = ["sub1@emailserver.com", "sub2@emailserver.com"]
 
 
 def create_body(subject: str, body: str) -> str:
+    """Creates an email body with the preset email sender
+    Args:
+        subject: Subject of the email
+        body: Contents of the email
+
+    Returns: Constructed message as a string
+    """
     message = MIMEMultipart()
 
     message["Subject"] = subject
@@ -28,22 +35,39 @@ def create_body(subject: str, body: str) -> str:
 
 
 async def send_emails(ctx, id: int):
-    with smtplib.SMTP(host=EMAIL_SERVER, port=1025) as server:
-        server.set_debuglevel(1)
-        for to_email in SUBSCRIBERS:
-            msg = create_body("Update notification", f"Record with ID {id} was updated")
-            server.sendmail(FROM_EMAIL, to_email, msg)
+    """Sends update alerts to the subscribed emails that a particular record has been updated
+    Args:
+        ctx: Context for the enqueued task
+        id: ID of the record that was updated
+    """
+    server = ctx['server']
+
+    for to_email in SUBSCRIBERS:
+        msg = create_body(
+            "Update notification",
+            f"Record with ID {id} was updated")
+        server.sendmail(FROM_EMAIL, to_email, msg)
 
 
 async def startup(ctx):
-    pass
+    """Function to run on worker startup
+    Args:
+        ctx: Context for the enqueued task
+    """
+    ctx['server'] = smtplib.SMTP(host=EMAIL_SERVER, port=1025)
+    ctx['server'].set_debuglevel(1)
 
 
 async def shutdown(ctx):
-    pass
+    """Function to run on worker startup
+    Args:
+        ctx: Context for the enqueued task
+    """
+    await ctx['server'].close()
 
 
 class WorkerSettings:
+    """Settings for the Arq worker to use when running jobs"""
     functions = [send_emails]
     on_startup = startup
     on_shutdown = shutdown
