@@ -1,0 +1,40 @@
+version: '3.7'
+
+services:
+
+  api:
+    build: .
+    image: reach_api
+    container_name: reach_api
+    command: ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8888"]
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    ports:
+      - "8888:8888"
+    depends_on:
+      - redis
+  redis:
+    image: redis
+    container_name: redis
+    expose:
+      - 6379
+  worker:
+    image: reach_api
+    container_name: worker
+    command: bash -c "arq worker.worker.WorkerSettings"
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - EMAIL_SERVER=emailserver
+      - FROM_EMAIL=alerts@emailserver
+      - EMAIL_PORT=1025
+    depends_on:
+      - redis
+      - emailserver
+  emailserver:
+    build: ./smtp
+    hostname: emailserver
+    container_name: emailserver
+    expose:
+      - 1025
