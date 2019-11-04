@@ -57,9 +57,9 @@ async def update_object(id: int, benefactor: schemas.BenefactorIn,
 
     Args:
         id: ID of benefactor
-        background_tasks: BackgroundTasks object automatically created by FastAPI
         benefactor: Updated information for benefactor with given ID
-        db: Local DB session from generator
+        db: DB session from generator
+        pool: Worker connection pool
 
     Returns: Newly updated benefactor info in JSON form
     """
