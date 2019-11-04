@@ -2,6 +2,7 @@ import os
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from typing import List
 
 from arq.connections import RedisSettings
 
@@ -13,8 +14,6 @@ EMAIL_SERVER = os.environ.get("EMAIL_SERVER", None)
 FROM_EMAIL = os.environ.get("FROM_EMAIL", None)
 
 REDIS_SETTINGS = RedisSettings(host=REDIS_HOST, port=REDIS_PORT)
-
-SUBSCRIBERS = ["sub1@emailserver.com", "sub2@emailserver.com"]
 
 
 def create_body(subject: str, body: str) -> str:
@@ -34,7 +33,7 @@ def create_body(subject: str, body: str) -> str:
     return message.as_string()
 
 
-async def send_emails(ctx, id: int):
+async def send_emails(ctx, id: int, subscribers: List[str]):
     """Sends update alerts to the subscribed emails that a particular record has been updated
     Args:
         ctx: Context for the enqueued task
@@ -42,7 +41,7 @@ async def send_emails(ctx, id: int):
     """
     server = ctx['server']
 
-    for to_email in SUBSCRIBERS:
+    for to_email in subscribers:
         msg = create_body(
             "Update notification",
             f"Record with ID {id} was updated")
